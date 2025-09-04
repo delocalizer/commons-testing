@@ -1,0 +1,24 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "gen3-testing"
+version = "0.1.0"
+description = "Standalone Playwright + pytest E2E tests for a deployed data commons."
+readme = "README.md"
+authors = ["Conrad Leonard <conrad@biocommons.org.au>"]
+package-mode = false  # no wheel needed; test harness only
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pytest = ">=8.2"
+pytest-playwright = ">=0.5.0"
+playwright = ">=1.46.0"
+python-dotenv = ">=1.0"
+pydantic = ">=2.6"
+pydantic-settings = ">=2.2"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-q", "--maxfail=1", "--color=yes"]
