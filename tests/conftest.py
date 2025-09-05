@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Load local env file for developer convenience; CI should rely on real env vars.
 load_dotenv(Path(os.getenv("ENV_FILE", ".env")), override=True)
 
+
 class Settings(BaseSettings):
 
     # Non-secret
@@ -18,9 +19,7 @@ class Settings(BaseSettings):
     USER_TIER2_PASSWORD: SecretStr | None
 
     model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        extra="ignore"
+        env_prefix="", case_sensitive=True, extra="ignore"
     )
 
 
