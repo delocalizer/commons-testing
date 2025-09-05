@@ -27,3 +27,13 @@ class Settings(BaseSettings):
 def settings(pytestconfig: pytest.Config) -> Settings:
     s = Settings()
     return s
+
+
+def pytest_configure(config):
+    """
+    Show custom markers
+    """
+    print(
+        "Custom markers: select with -m '<marker>', deselect with -m 'not <marker>'\n ",
+        "\n  ".join(config._getini("markers")),
+    )
