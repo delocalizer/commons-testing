@@ -49,6 +49,10 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     steps:
+
+      - name: Install jq (for reading metadata)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Checkout gh-pages branch (if exists)
         uses: actions/checkout@v4
         with:
@@ -75,12 +79,23 @@ jobs:
           mkdir -p "$run_dir"
           mv _report_in/report.html "$run_dir/report.html"
 
+          # Write per-run metadata (status + UTC ISO timestamp + link back to workflow run)
+          printf '%s\n' \
+            '{' \
+            '  "run": '"${{ github.run_number }}"',' \
+            '  "status": "'"${{ needs.tests.result }}"'",' \
+            '  "datetime": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",' \
+            '  "run_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"' \
+            '}' > "$run_dir/meta.json"
+
+
           # Rebuild a static index.html listing all runs (newest first)
           mkdir -p public/runs
           {
             echo '<!doctype html><meta charset="utf-8"><title>E2E Reports</title>'
-            echo '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:2rem}h1{margin:.2rem 0}.muted{color:#666}ul{line-height:1.8}</style>'
-            echo '<h1>Test Reports</h1><p class="muted">History of published runs.</p><ul>'
+            echo '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:2rem}h1{margin:.2rem 0}.muted{color:#666}ul{line-height:1.8}li{margin:.25rem 0}.badge{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;vertical-align:baseline;margin-right:.4rem}.ok{background:#22c55e}.fail{background:#ef4444}.skip{background:#9ca3af}</style>'
+            echo '<h1>E2E Reports</h1><p class="muted">History of published runs.</p><ul>'
+
             if [ -d public/runs ]; then
               # list run-* dirs, sort numerically desc on the run number
               find public/runs -maxdepth 1 -type d -name 'run-*' -printf '%f\n' \
@@ -88,7 +103,25 @@ jobs:
               | sort -nr \
               | cut -d' ' -f2 \
               | while read -r d; do
-                  echo "<li><a href=\"runs/$d/report.html\">$d</a></li>"
+                  status="unknown"; when=""; badge_class="skip"
+                  if [ -f "public/runs/$d/meta.json" ]; then
+                    status=$(jq -r '.status // "unknown"' "public/runs/$d/meta.json")
+                    when=$(jq -r '.datetime // ""' "public/runs/$d/meta.json")
+                  fi
+                  case "$status" in
+                    success) badge_class="ok" ;;
+                    failure|cancelled|timed_out) badge_class="fail" ;;
+                    *) badge_class="skip" ;;
+                  esac
+                  label="$d"
+                  if [ -n "$when" ]; then
+                    label="$d — $when"
+                  fi
+                  if [ -f "public/runs/$d/report.html" ]; then
+                    echo "<li><span class='badge $badge_class'></span><a href=\"runs/$d/report.html\">$label</a></li>"
+                  else
+                    echo "<li><span class='badge $badge_class'></span><a href=\"runs/$d/\">$label</a></li>"
+                  fi
                 done
             fi
             echo '</ul>'
