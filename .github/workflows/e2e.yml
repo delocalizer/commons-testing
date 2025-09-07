@@ -117,11 +117,7 @@ jobs:
                   if [ -n "$when" ]; then
                     label="$d — $when"
                   fi
-                  if [ -f "public/runs/$d/report.html" ]; then
-                    echo "<li><span class='badge $badge_class'></span><a href=\"runs/$d/report.html\">$label</a></li>"
-                  else
-                    echo "<li><span class='badge $badge_class'></span><a href=\"runs/$d/\">$label</a></li>"
-                  fi
+                  echo "<li><span class='badge $badge_class'></span><a href=\"runs/$d/report.html\">$label</a></li>"
                 done
             fi
             echo '</ul>'
