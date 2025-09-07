@@ -1,5 +1,11 @@
 Standalone Playwright + pytest E2E tests for a deployed data commons.
 
+Test status for the GitHub actions workflow:
+
+[![e2e](https://github.com/delocalizer/gen3-testing/actions/workflows/e2e.yml/badge.svg)](https://github.com/delocalizer/gen3-testing/actions/workflows/e2e.yml)
+
+You can also run these tests in a local environment:
+
 ## Setup
 
 ```
