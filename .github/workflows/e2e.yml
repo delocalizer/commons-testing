@@ -9,19 +9,18 @@ permissions:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    container:
+      # has python & browsers for Playwright; version matches pin in pyproject.toml
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
+
     env:
-      # 1) Runtime config
+      # Runtime config
       BASE_URL: ${{ vars.BASE_URL }}
       USER_TIER2_USERNAME: ${{ secrets.USER_TIER2_USERNAME }}
       USER_TIER2_PASSWORD: ${{ secrets.USER_TIER2_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
-
-      # 2) Python + Poetry + deps
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
 
       - name: Install Poetry
         run: |
@@ -31,26 +30,11 @@ jobs:
       - name: Install project dependencies (Poetry)
         run: poetry install --no-interaction --no-ansi --only test
 
-      # 3) Playwright browsers / OS deps (no caching yet)
-      - name: Install Playwright browsers and deps
-        run: poetry run python -m playwright install --with-deps
-
-      # 4) Run tests and write HTML report to playwright-report/report.html
       - name: Run pytest (generate HTML report)
         run: |
           mkdir -p playwright-report
           poetry run pytest
 
-      # 5) Publish the report as a workflow artifact (visible on the run page)
-      - name: Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
-
-      # 6) Publish the report to gh pages
       - name: Upload HTML report artifact
         if: always()
         uses: actions/upload-artifact@v4
