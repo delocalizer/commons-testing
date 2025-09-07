@@ -1,45 +1,8 @@
-<!doctype html>
-<meta charset="utf-8">
-<title>E2E Report Runs</title>
-<style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 2rem; }
-  h1 { margin-bottom: .5rem; }
-  .muted { color:#666; font-size:.9rem; }
-  ul { line-height:1.8; }
-  code { background:#f6f8fa; padding:.2rem .4rem; border-radius:4px; }
-</style>
-<h1>E2E Reports</h1>
-<p class="muted">This page lists all published run reports from GitHub Actions.</p>
-<ul id="runs"></ul>
-<script>
-  (async () => {
-    // Derive owner/repo from the current Pages URL
-    // Paths look like: /OWNER/REPO/...
-    const parts = location.pathname.split("/").filter(Boolean);
-    const owner = parts[0];
-    const repo  = parts[1];
-    const api = `https://api.github.com/repos/${owner}/${repo}/contents/runs?ref=gh-pages`;
-    try {
-      const res = await fetch(api, { headers: { 'Accept': 'application/vnd.github+json' }});
-      if (!res.ok) throw new Error('Failed to load runs');
-      const items = await res.json();
-      // Items are directories like run-1234
-      const runs = items
-        .filter(it => it.type === 'dir' && /^run-\d+$/.test(it.name))
-        .map(it => ({
-          name: it.name,
-          n: parseInt(it.name.replace('run-',''), 10),
-          url: `${location.origin}/${owner}/${repo}/runs/${it.name}/report.html`
-        }))
-        .sort((a,b) => b.n - a.n); // newest first
-      const ul = document.getElementById('runs');
-      if (runs.length === 0) {
-        ul.innerHTML = '<li>No runs found yet.</li>';
-        return;
-      }
-      ul.innerHTML = runs.map(r => `<li><a href="${r.url}">${r.name}</a></li>`).join('');
-    } catch (e) {
-      document.getElementById('runs').innerHTML = '<li>Error loading run list</li>';
-    }
-  })();
-</script>
+<!doctype html><meta charset="utf-8"><title>E2E Reports</title>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:2rem}h1{margin:.2rem 0}.muted{color:#666}ul{line-height:1.8}</style>
+<h1>Test Reports</h1><p class="muted">History of published runs.</p><ul>
+<li><a href="runs/run-run-5/">run-run-5</a></li>
+<li><a href="runs/run-run-4/">run-run-4</a></li>
+<li><a href="runs/run-run-3/">run-run-3</a></li>
+</ul>
+<p class="muted">Latest: run-5 from <a href="https://github.com/delocalizer/gen3-testing/actions/runs/17522789940">this workflow run</a>.</p>
