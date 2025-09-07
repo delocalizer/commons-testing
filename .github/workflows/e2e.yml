@@ -100,20 +100,14 @@ jobs:
             if [ -d public/runs ]; then
               # list run-* dirs, sort numerically desc on the run number
               find public/runs -maxdepth 1 -type d -name 'run-*' -printf '%f\n' \
-              | sed -E 's/run-([0-9]+)/\1 run-&/' \
+              | sed -E 's/run-([0-9]+)/\1 &/' \
               | sort -nr \
               | cut -d' ' -f2 \
               | while read -r d; do
-                  if [ -f "public/runs/$d/report.html" ]; then
-                    echo "<li><a href=\"runs/$d/report.html\">$d</a></li>"
-                  else
-                    echo "<li><a href=\"runs/$d/\">$d</a></li>"
-                  fi
+                  echo "<li><a href=\"runs/$d/report.html\">$d</a></li>"
                 done
             fi
             echo '</ul>'
-            # Link back to repo run
-            echo '<p class="muted">Latest: run-${{ github.run_number }} from <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">this workflow run</a>.</p>'
           } > public/index.html
 
       - name: Publish to gh-pages
