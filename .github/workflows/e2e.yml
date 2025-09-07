@@ -65,78 +65,61 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (empty working dir)
+      - name: Checkout gh-pages branch (if exists)
         uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: ghp           # checkout into ./ghp; if branch doesn't exist, this step still creates the folder
 
       - name: Download report artifact
         uses: actions/download-artifact@v4
         with:
           name: playwright-report
-          path: _report_staging/
+          path: _report_in/
 
-      - name: Prepare site bundle
+      - name: Stage site (preserve history, add new run, rebuild index)
         run: |
-          set -e
-          mkdir -p public/runs/run-${{ github.run_number }}
-          # Move the generated report under a per-run path
-          mv _report_staging/report.html public/runs/run-${{ github.run_number }}/report.html
+          set -euo pipefail
 
-          # index.html that lists all runs dynamically via the GitHub API
-          cat > public/index.html <<'HTML'
-          <!doctype html>
-          <meta charset="utf-8">
-          <title>E2E Report Runs</title>
-          <style>
-            body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 2rem; }
-            h1 { margin-bottom: .5rem; }
-            .muted { color:#666; font-size:.9rem; }
-            ul { line-height:1.8; }
-            code { background:#f6f8fa; padding:.2rem .4rem; border-radius:4px; }
-          </style>
-          <h1>E2E Reports</h1>
-          <p class="muted">This page lists all published run reports from GitHub Actions.</p>
-          <ul id="runs"></ul>
-          <script>
-            (async () => {
-              // Derive owner/repo from the current Pages URL
-              // Paths look like: /OWNER/REPO/...
-              const parts = location.pathname.split("/").filter(Boolean);
-              const owner = parts[0];
-              const repo  = parts[1];
-              const api = `https://api.github.com/repos/${owner}/${repo}/contents/runs?ref=gh-pages`;
-              try {
-                const res = await fetch(api, { headers: { 'Accept': 'application/vnd.github+json' }});
-                if (!res.ok) throw new Error('Failed to load runs');
-                const items = await res.json();
-                // Items are directories like run-1234
-                const runs = items
-                  .filter(it => it.type === 'dir' && /^run-\d+$/.test(it.name))
-                  .map(it => ({
-                    name: it.name,
-                    n: parseInt(it.name.replace('run-',''), 10),
-                    url: `${location.origin}/${owner}/${repo}/runs/${it.name}/report.html`
-                  }))
-                  .sort((a,b) => b.n - a.n); // newest first
-                const ul = document.getElementById('runs');
-                if (runs.length === 0) {
-                  ul.innerHTML = '<li>No runs found yet.</li>';
-                  return;
-                }
-                ul.innerHTML = runs.map(r => `<li><a href="${r.url}">${r.name}</a></li>`).join('');
-              } catch (e) {
-                document.getElementById('runs').innerHTML = '<li>Error loading run list</li>';
-              }
-            })();
-          </script>
-          HTML
+          mkdir -p public
+          if [ -d ghp ]; then
+            rsync -a --delete --exclude='.git' ghp/ public/
+          fi
 
-      - name: Publish to gh-pages (append-only)
+          # Add this run under runs/run-<run_number>/
+          run_dir="public/runs/run-${{ github.run_number }}"
+          mkdir -p "$run_dir"
+          mv _report_in/report.html "$run_dir/report.html"
+
+          # Rebuild a static index.html listing all runs (newest first)
+          mkdir -p public/runs
+          {
+            echo '<!doctype html><meta charset="utf-8"><title>E2E Reports</title>'
+            echo '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:2rem}h1{margin:.2rem 0}.muted{color:#666}ul{line-height:1.8}</style>'
+            echo '<h1>Test Reports</h1><p class="muted">History of published runs.</p><ul>'
+            if [ -d public/runs ]; then
+              # list run-* dirs, sort numerically desc on the run number
+              find public/runs -maxdepth 1 -type d -name 'run-*' -printf '%f\n' \
+              | sed -E 's/run-([0-9]+)/\1 run-&/' \
+              | sort -nr \
+              | cut -d' ' -f2 \
+              | while read -r d; do
+                  if [ -f "public/runs/$d/report.html" ]; then
+                    echo "<li><a href=\"runs/$d/report.html\">$d</a></li>"
+                  else
+                    echo "<li><a href=\"runs/$d/\">$d</a></li>"
+                  fi
+                done
+            fi
+            echo '</ul>'
+            # Link back to repo run
+            echo '<p class="muted">Latest: run-${{ github.run_number }} from <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">this workflow run</a>.</p>'
+          } > public/index.html
+
+      - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: public
-          # Keep previously published files so history accumulates:
           keep_files: true
-          # Use a custom commit message (optional)
           commit_message: "Publish report for run ${{ github.run_number }}"
-
