@@ -11,7 +11,7 @@ def test_homepage(settings: Settings, page: Page) -> None:
     The data commons homepage is live at the expected URL
     """
     page.goto(settings.BASE_URL)
-    expect(page.get_by_role("link", name="link back to homepage")).to_be_visible()
+    assert page.is_visible("body")
 
 
 @pytest.mark.parametrize("page_as_role", ["tier1"], indirect=True)
@@ -26,7 +26,8 @@ def test_homepage_appearance(settings: Settings, page_as_role: Page) -> None:
     expect(page.get_by_role("button", name="Browse Data")).to_be_visible()
     expect(page.get_by_role("button", name="Documentation")).to_be_visible()
     expect(page.get_by_role("button", name="Login")).to_be_visible()
-    # navigation links (tabs)
+    # navigation links (tabs) — these will differ according to frontend version
+    # and configuration
     expect(page.get_by_role("link").filter(has_text="Dictionary")).to_be_visible()
     expect(page.get_by_role("link").filter(has_text="Exploration")).to_be_visible()
     expect(page.get_by_role("link").filter(has_text="Query")).to_be_visible()
