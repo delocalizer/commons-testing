@@ -31,9 +31,8 @@ addopts = [
     "--html=playwright-report/report.html",
     "--self-contained-html",
 ]
-markers = [
-    "auth0: depends on detailed configuration of Auth0 identity provider",
-    "datamodel: depends on details of data model",
-    "smoke: is the data commons live",
-]
 testpaths = ["tests"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
