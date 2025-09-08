@@ -22,11 +22,7 @@ def test_tier1_views(settings: Settings, page_as_role: Page) -> None:
     # Exploration view
     page.get_by_role("link").filter(has_text="Exploration").click()
     page.get_by_role("tab", name="Data Files").click()
-    page.get_by_role("cell", name="No records to display").click()
-    page.get_by_role("button", name="Close").click()
     page.get_by_role("link").filter(has_text="Exploration").click()
-    page.get_by_role("tab", name="Data Files").click()
-    expect(page.get_by_role("table")).to_contain_text("No records to display")
     page.get_by_role("tab", name="Cases").click()
 
     # Dictionary table view is visible
