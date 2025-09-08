@@ -48,6 +48,7 @@ jobs:
     name: Publish report to GitHub Pages
     needs: tests
     runs-on: ubuntu-latest
+    if: ${{ always() }}
     steps:
 
       - name: Install jq (for reading metadata)
