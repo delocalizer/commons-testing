@@ -56,6 +56,7 @@ jobs:
 
       - name: Checkout gh-pages branch (if exists)
         uses: actions/checkout@v4
+        continue-on-error: true
         with:
           ref: gh-pages
           path: ghp           # checkout into ./ghp; if branch doesn't exist, this step still creates the folder
